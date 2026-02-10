@@ -134,7 +134,7 @@ private:
 enum class PoolMode
 {
     MODE_FIXED,  // 固定数量的线程
-    MODE_CACHED, // 线程数量可动态增长
+    MODE_CACHED, // 线程数量可动态增长，适合小而快的任务，防止线程过多导致系统性能受损
 };
 
 // 线程类型
@@ -198,6 +198,9 @@ private:
     // 定义线程函数
     void threadFunc();
 
+    // 检查Pool的运行状态
+    bool checkRunninngState() const;
+
 private:
     std::vector<std::unique_ptr<Thread>> threads_; // 线程列表，裸指针不安全，使用智能指针
     size_t initThreadSize_;          // 初始线程数量
@@ -211,6 +214,8 @@ private:
     std::condition_variable notEmpty_; // 表示队列不空
 
     PoolMode poolMode_; // 当前线程池的工作模式
+
+    std::atomic_bool isPoolRunning_; // 表示当前线程池的启动状态
 };
 
 #endif

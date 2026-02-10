@@ -11,6 +11,7 @@ ThreadPool::ThreadPool()
     , taskSize_(0)
     , taskQueThreshHold_(TASK_MAX_THRESHHOLD)
     , poolMode_(PoolMode::MODE_FIXED)
+    , isPoolRunning_(false)
 {}
 
 // 线程池析构，有构造必须析构
@@ -20,6 +21,9 @@ ThreadPool::~ThreadPool()
 // 开启线程池
 void ThreadPool::start(int initThreadSize)
 {
+    // 设置线程池的启动状态
+    isPoolRunning_ = true;
+
     // 记录初始线程个数
     initThreadSize_ = initThreadSize;
 
@@ -41,12 +45,22 @@ void ThreadPool::start(int initThreadSize)
 // 设置线程池的工作模式
 void ThreadPool::setMode(PoolMode mode)
 {
+    // 不允许启动后再设置
+    if(checkRunninngState())
+    {
+        return;
+    }
     poolMode_ = mode;
 }
 
 // 设置task任务队列上限阈值
 void ThreadPool::setTaskQueMaxThreshHold(int threshhold)
 {
+    // 不允许启动后再设置
+    if(checkRunninngState())
+    {
+        return;
+    }
     taskQueThreshHold_ = threshhold;
 }
 
@@ -76,6 +90,8 @@ Result ThreadPool::submitTask(std::shared_ptr<Task> sp)
     // 在notEmpty_上通知
     notEmpty_.notify_all();
 
+    // cached模式：需要根据任务数量和空闲县茨城的数量，判断是否需要创建新的线程
+
     // 返回任务的Result对象
     return Result(sp);
 }
@@ -96,6 +112,8 @@ void ThreadPool::threadFunc()
             std::unique_lock<std::mutex> lock(taskQueMtx_);
 
             std::cout << "tid:" << std::this_thread::get_id() << "尝试获取任务" << std::endl;
+
+            // cached模式：有可能已经创建了很多线程，但是空闲时间超过60s，应该把多余的线程回收
 
             // 等待notEmpty条件
             notEmpty_.wait(lock, [&]() -> bool
@@ -124,6 +142,12 @@ void ThreadPool::threadFunc()
             task->exec();
         }
     }
+}
+
+// 检查Pool的运行状态
+bool ThreadPool::checkRunninngState() const
+{
+    return isPoolRunning_;
 }
 
 ///////////////// 线程方法实现
