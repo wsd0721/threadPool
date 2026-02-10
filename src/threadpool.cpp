@@ -153,7 +153,7 @@ void ThreadPool::threadFunc(int threadId)
     auto lastTime = std::chrono::high_resolution_clock().now();
 
     //循环等待
-    while (isPoolRunning_)
+    for (;;)
     {
         std::shared_ptr<Task> task;
         {
@@ -163,8 +163,20 @@ void ThreadPool::threadFunc(int threadId)
             std::cout << "tid:" << std::this_thread::get_id() << "尝试获取任务" << std::endl;
 
             // cached模式：有可能已经创建了很多线程，但是空闲时间超过60s，应该把多余的线程回收（超过initThreadSize_的数量要进行回收）
-            while(isPoolRunning_ && taskQue_.size() == 0)
+            while(taskQue_.size() == 0)
             {
+                // 线程池要结束，回收线程资源
+                if(!isPoolRunning_)
+                {
+                    threads_.erase(threadId);
+                    curThreadSize_--;
+                    idleThreadSize_--;
+
+                    std::cout << "threadid:" << std::this_thread::get_id() << " exit" << std::endl;
+                    exitCond_.notify_all();
+                    return;
+                }
+
                 if(poolMode_ == PoolMode::MODE_CACHED)
                 {
                     // 不能一直等待，需要每一秒检查一次
@@ -184,6 +196,7 @@ void ThreadPool::threadFunc(int threadId)
                             idleThreadSize_--;
 
                             std::cout << "threadid:" << std::this_thread::get_id() << " exit" << std::endl;
+                            exitCond_.notify_all();
                             return;
                         }
                     }
@@ -206,10 +219,10 @@ void ThreadPool::threadFunc(int threadId)
                 }*/
             }
 
-            if(!isPoolRunning_)
+            /*if(!isPoolRunning_)
             {
                 break;
-            }
+            }*/
 
             idleThreadSize_--;
 
@@ -239,13 +252,13 @@ void ThreadPool::threadFunc(int threadId)
         lastTime = std::chrono::high_resolution_clock().now(); // 更新线程执行完任务的时间
     }
 
-    threads_.erase(threadId);
+    /*threads_.erase(threadId);
     curThreadSize_--;
     idleThreadSize_--;
 
     std::cout << "threadid:" << std::this_thread::get_id() << " exit" << std::endl;
     exitCond_.notify_all();
-    return;
+    return;*/
 }
 
 // 检查Pool的运行状态
