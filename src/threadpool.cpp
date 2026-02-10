@@ -163,7 +163,7 @@ void ThreadPool::threadFunc(int threadId)
             std::cout << "tid:" << std::this_thread::get_id() << "尝试获取任务" << std::endl;
 
             // cached模式：有可能已经创建了很多线程，但是空闲时间超过60s，应该把多余的线程回收（超过initThreadSize_的数量要进行回收）
-            while(taskQue_.size() == 0)
+            while(isPoolRunning_ && taskQue_.size() == 0)
             {
                 if(poolMode_ == PoolMode::MODE_CACHED)
                 {
@@ -194,7 +194,7 @@ void ThreadPool::threadFunc(int threadId)
                     notEmpty_.wait(lock);
                 }
 
-                if(!isPoolRunning_)
+                /*if(!isPoolRunning_)
                 {
                     threads_.erase(threadId);
                     curThreadSize_--;
@@ -203,7 +203,12 @@ void ThreadPool::threadFunc(int threadId)
                     std::cout << "threadid:" << std::this_thread::get_id() << " exit" << std::endl;
                     exitCond_.notify_all();
                     return;
-                }
+                }*/
+            }
+
+            if(!isPoolRunning_)
+            {
+                break;
             }
 
             idleThreadSize_--;

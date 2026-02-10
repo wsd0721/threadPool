@@ -10,6 +10,7 @@
 #include<functional>
 #include<stdexcept>
 #include<unordered_map>
+#include<thread>
 
 // Any类型的手动实现
 class Any
@@ -186,8 +187,8 @@ public:
     // 线程池析构
     ~ThreadPool();
     
-    // 开启线程池，同时指定线程数量，避免再写一个接口
-    void start(int initThreadSize = 4);
+    // 开启线程池，同时指定线程数量，避免再写一个接口，默认为CPU核心数
+    void start(int initThreadSize = std::thread::hardware_concurrency());
     
     // 设置线程池的工作模式
     void setMode(PoolMode mode);
