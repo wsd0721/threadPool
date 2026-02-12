@@ -1,0 +1,7 @@
+1. 如何让线程池提交任务更加方便
+    即提交任务无需继承类，只需函数+参数即可,pool.submitTask(func(), 1, 10000)
+    使用可变参模板编程
+
+2. Result类型是否有现成的替代方案
+    考虑packaged_task（函数对象） async
+    使用future代替Result类
